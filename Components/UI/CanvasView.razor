@@ -1,0 +1,399 @@
+@namespace AppN8N.Components.UI
+@using AppN8N.Services
+@using System.Linq
+@inject AIService AI
+@implements IDisposable
+
+<div class="panel area-canvas">
+    <div class="make-canvas-header">
+        <span class="make-logo">
+            <!-- Make.com logo SVG inline -->
+            <svg width="20" height="20" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="100" fill="#6D00CC"/>
+                <path d="M60 130 L100 70 L140 130" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+        </span>
+        <span class="canvas-title">Make · Scenario Preview</span>
+        @if (AI.LastResult != null && !AI.IsGenerating)
+        {
+            <span class="modules-badge">@AI.LastResult.ModuleCount módulos</span>
+        }
+    </div>
+
+    <div class="make-canvas-body" id="make-canvas-scroll">
+        @if (AI.IsGenerating)
+        {
+            <div class="canvas-center-msg">
+                <div class="make-spinner-wrap">
+                    <div class="make-spinner"></div>
+                </div>
+                <p class="canvas-msg-text">Construyendo escenario Make...</p>
+            </div>
+        }
+        else if (AI.LastResult != null && AI.LastResult.Modules != null && AI.LastResult.Modules.Any())
+        {
+            <!-- Líneas de conexión SVG entre módulos -->
+            <svg class="connections-svg" xmlns="http://www.w3.org/2000/svg">
+                @{
+                    var mods = AI.LastResult.Modules;
+                    int nodeSize = 72;
+                    int hGap = 130;
+                    int totalWidth = mods.Count * (nodeSize + hGap) - hGap;
+                    int svgW = totalWidth + 60;
+                    int svgH = 160;
+                }
+                @for (int i = 0; i < mods.Count - 1; i++)
+                {
+                    int x1 = 30 + i * (nodeSize + hGap) + nodeSize;
+                    int y1 = svgH / 2;
+                    int x2 = 30 + (i + 1) * (nodeSize + hGap);
+                    int y2 = svgH / 2;
+                    int mx = (x1 + x2) / 2;
+                    string midCx = mx.ToString();
+                    string midCy = y1.ToString();
+
+                    <!-- Línea base -->
+                    <line x1="@x1" y1="@y1" x2="@x2" y2="@y2" stroke="#3d3d5c" stroke-width="2"/>
+                    <!-- Círculo punteado en el medio (indicador de filtro/ruta) -->
+                    <circle cx="@midCx" cy="@midCy" r="5" fill="none" stroke="#5a5a8a" stroke-width="1.5" stroke-dasharray="2,2"/>
+                }
+            </svg>
+
+            <!-- Nodos de módulo -->
+            <div class="make-modules-row">
+                @foreach (var mod in AI.LastResult.Modules)
+                {
+                    var isFirst = mod.Id == AI.LastResult.Modules.First().Id;
+                    <div class="make-module-wrap">
+                        <div class="make-module @(isFirst ? "make-module-trigger" : "")"
+                             style="--mod-color: @mod.Color;"
+                             title="@mod.App - @mod.Label">
+
+                            @if (isFirst)
+                            {
+                                <div class="trigger-badge">TRIGGER</div>
+                            }
+                            else
+                            {
+                                <div class="action-badge">
+                                    @(mod.Module?.ToUpper() switch {
+                                        "SEARCH" => "SEARCH",
+                                        "ROUTER" => "ROUTER",
+                                        _ => "ACTION"
+                                    })
+                                </div>
+                            }
+
+                            <div class="module-icon-ring" style="background: @mod.Color;">
+                                <span class="module-emoji">@mod.Icon</span>
+                            </div>
+
+                            <div class="module-number">@mod.Id</div>
+                        </div>
+                        <div class="module-label-wrap">
+                            <div class="module-app-name">@mod.AppLabel</div>
+                            <div class="module-action-name">@mod.Label</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (AI.LastResult != null)
+        {
+            <div class="canvas-center-msg">
+                <span style="font-size:2rem;">⚠️</span>
+                <p class="canvas-msg-text">No se encontraron módulos en el resultado. Intenta de nuevo.</p>
+            </div>
+        }
+        else
+        {
+            <div class="canvas-center-msg">
+                <span style="font-size:3rem; opacity:0.2;">
+                    <svg width="48" height="48" viewBox="0 0 200 200" fill="none">
+                        <circle cx="100" cy="100" r="96" stroke="#6D00CC" stroke-width="8"/>
+                        <path d="M60 130 L100 70 L140 130" stroke="#6D00CC" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                </span>
+                <p class="canvas-msg-text">Describe una automatización para visualizar el escenario en Make</p>
+                <p class="canvas-msg-sub">Los módulos aparecerán aquí conectados como en Make.com</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+/* ── Panel base ────────────────────────────────────────────── */
+.area-canvas {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Header del canvas ─────────────────────────────────────── */
+.make-canvas-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(109,0,204,0.12);
+    border-bottom: 1px solid rgba(109,0,204,0.25);
+    flex-shrink: 0;
+}
+
+.make-logo {
+    display: flex;
+    align-items: center;
+}
+
+.canvas-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #c084fc;
+    letter-spacing: 0.4px;
+    flex: 1;
+}
+
+.modules-badge {
+    font-size: 11px;
+    background: rgba(109,0,204,0.3);
+    color: #d8b4fe;
+    border: 1px solid rgba(109,0,204,0.4);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-weight: 600;
+}
+
+/* ── Canvas body ───────────────────────────────────────────── */
+.make-canvas-body {
+    flex: 1;
+    background: #13131f;
+    background-image:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+    background-size: 28px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px;
+}
+
+/* ── SVG de conexiones ─────────────────────────────────────── */
+.connections-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+/* ── Fila de módulos ───────────────────────────────────────── */
+.make-modules-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 130px;
+    padding: 0 30px;
+    position: relative;
+    z-index: 2;
+    flex-wrap: nowrap;
+}
+
+/* ── Wrapper de módulo ─────────────────────────────────────── */
+.make-module-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* ── Módulo Make (círculo) ─────────────────────────────────── */
+.make-module {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #1e1e32;
+    border: 3px solid var(--mod-color, #6D00CC);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow:
+        0 0 0 6px rgba(109,0,204,0.08),
+        0 4px 16px rgba(0,0,0,0.4);
+}
+
+.make-module::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--mod-color, #6D00CC);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.make-module:hover::before { opacity: 0.4; }
+
+.make-module:hover {
+    transform: scale(1.1);
+    box-shadow:
+        0 0 0 8px color-mix(in srgb, var(--mod-color) 15%, transparent),
+        0 8px 24px rgba(0,0,0,0.5);
+}
+
+/* Trigger: tiene un anillo exterior extra */
+.make-module-trigger {
+    box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--mod-color) 30%, transparent),
+        0 0 0 8px color-mix(in srgb, var(--mod-color) 10%, transparent),
+        0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* ── Ícono del módulo ──────────────────────────────────────── */
+.module-icon-ring {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.92;
+}
+
+.module-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* ── Número del módulo ─────────────────────────────────────── */
+.module-number {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: #0d0d1a;
+    border: 2px solid var(--mod-color, #6D00CC);
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--mod-color, #c084fc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Badges de tipo ────────────────────────────────────────── */
+.trigger-badge, .action-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.trigger-badge {
+    background: #6D00CC;
+    color: #fff;
+}
+
+.action-badge {
+    background: rgba(255,255,255,0.08);
+    color: #aaa;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* ── Labels bajo el módulo ─────────────────────────────────── */
+.module-label-wrap {
+    text-align: center;
+    max-width: 100px;
+}
+
+.module-app-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #d8b4fe;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.module-action-name {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+/* ── Estado vacío / cargando ───────────────────────────────── */
+.canvas-center-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.canvas-msg-text {
+    color: #6b6b9a;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.canvas-msg-sub {
+    color: #444466;
+    font-size: 11px;
+    margin: 0;
+}
+
+/* ── Spinner ───────────────────────────────────────────────── */
+.make-spinner-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.make-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(109,0,204,0.2);
+    border-top-color: #6D00CC;
+    border-radius: 50%;
+    animation: make-spin 0.9s ease-in-out infinite;
+}
+
+@@keyframes make-spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AI.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AI.OnStateChanged -= StateHasChanged;
+    }
+}

@@ -1,0 +1,522 @@
+@namespace AppN8N.Components.UI
+@using AppN8N.Services
+@inject AIService AI
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="panel area-info">
+    <div class="panel-header">
+        Resumen · Exportar Blueprint
+    </div>
+    <div class="panel-content">
+
+        <!-- ── MAKE BRANDING BANNER ────────────────────────────────── -->
+        <div class="make-brand-banner">
+            <svg width="18" height="18" viewBox="0 0 200 200" fill="none">
+                <circle cx="100" cy="100" r="100" fill="#6D00CC"/>
+                <path d="M60 130 L100 70 L140 130" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span>Generador de Escenarios para <strong>Make.com</strong></span>
+        </div>
+
+        <!-- ── ESTADO: GENERANDO ───────────────────────────────────── -->
+        @if (AI.IsGenerating)
+        {
+            <div class="status-placeholder">
+                <div class="mini-make-spin"></div>
+                <p>Construyendo arquitectura de módulos...</p>
+            </div>
+        }
+
+        <!-- ── ESTADO: CON RESULTADO ──────────────────────────────── -->
+        @{
+            var result = AI.LastResult;
+        }
+        @if (result != null)
+        {
+            <!-- Descripción del escenario -->
+            <div class="result-card result-card-purple">
+                <div class="result-card-label">📋 Descripción del Escenario</div>
+                <div class="result-card-value">@result.Description</div>
+            </div>
+
+            <!-- Detalles técnicos -->
+            <div class="result-card result-card-blue">
+                <div class="result-card-label">⚙️ Detalles</div>
+                <div class="result-card-value">
+                    <div class="detail-row">
+                        <span class="detail-key">Módulos:</span>
+                        <span class="detail-val">@result.ModuleCount</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-key">Generado:</span>
+                        <span class="detail-val">@result.GeneratedAt.ToString("HH:mm:ss")</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-key">Blueprint:</span>
+                        <span class="detail-val @(result.BlueprintData.HasValue ? "val-ok" : "val-error")">
+                            @(result.BlueprintData.HasValue ? "✔ Listo" : "✘ No disponible")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de módulos generados -->
+            @if (result.Modules?.Any() == true)
+            {
+                <div class="modules-list-card">
+                    <div class="modules-list-title">Módulos del Escenario</div>
+                    @foreach (var mod in result.Modules)
+                    {
+                        <div class="module-row">
+                            <div class="module-dot" style="background: @mod.Color;"></div>
+                            <span class="module-row-icon">@mod.Icon</span>
+                            <div class="module-row-info">
+                                <span class="module-row-app">@mod.AppLabel</span>
+                                <span class="module-row-label">@mod.Label</span>
+                            </div>
+                            <span class="module-row-type">@mod.Module?.ToUpper()</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Sección de exportación/creación -->
+            @if (result.BlueprintData.HasValue)
+            {
+                <div class="export-section">
+                    <!-- BOTÓN DE CREACIÓN AUTOMÁTICA (API) -->
+                    <button class="btn-api-export @(AI.IsExporting ? "is-loading" : "")" 
+                            @onclick="CrearEnMake" 
+                            disabled="@AI.IsExporting">
+                        @if (AI.IsExporting)
+                        {
+                            <span class="spinner-small"></span>
+                            <span>Creando escenario...</span>
+                        }
+                        else
+                        {
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            <span>🚀 Crear Escenario en Make.com</span>
+                        }
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(AI.ExportError))
+                    {
+                        <div class="api-error-msg">
+                            <strong>Error de exportación:</strong> @AI.ExportError
+                            <br/><small>Asegúrate de que tu Token y TeamId sean correctos en appsettings.json</small>
+                            
+                            <div class="debug-actions">
+                                <button class="btn-connection-test @(AI.IsVerifyingConnection ? "is-loading" : "")" 
+                                        @onclick="ProbarConexion" 
+                                        disabled="@AI.IsVerifyingConnection">
+                                    @(AI.IsVerifyingConnection ? "⏳ Probando..." : "🔍 Probar Conexión")
+                                </button>
+                                <span class="connection-status">@AI.ConnectionStatus</span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(AI.ExportSuccessUrl))
+                    {
+                        <a href="@AI.ExportSuccessUrl" target="_blank" class="api-success-link">
+                            ✔ Escenario Creado. Haz clic aquí para abrirlo.
+                        </a>
+                    }
+
+                    <div style="margin: 15px 0; border-top: 1px dashed #333; height: 1px;"></div>
+
+                    <!-- BOTÓN DE DESCARGA MANUAL -->
+                    <button class="btn-download-blueprint" @onclick="DescargarBlueprint" id="btn-download-blueprint">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Descargar Blueprint (.json)
+                    </button>
+
+                    <div class="import-guide">
+                        <div class="import-guide-title">📥 O importa manualmente en Make.com</div>
+                        <ol class="import-steps">
+                            <li>Descarga el <code>.json</code> arriba</li>
+                            <li>En Make, haz clic en <strong>⋮ (3 puntos)</strong> -> <strong>"Import Blueprint"</strong></li>
+                        </ol>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="export-error-msg">
+                    ✘ El blueprint no fue generado. Intenta ejecutar el prompt de nuevo.
+                </div>
+            }
+        }
+        else
+        {
+            <div class="status-placeholder">
+                <p style="font-size:13px;">No hay escenario generado.</p>
+                <p style="font-size:11px; color:#555; margin-top:4px;">Escribe tu automatización en el chat.</p>
+            </div>
+        }
+
+    </div>
+</div>
+
+<style>
+/* ── Make brand banner ───────────────────────────────────── */
+.make-brand-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #b48ce6;
+    background: rgba(109,0,204,0.1);
+    border: 1px solid rgba(109,0,204,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+}
+.make-brand-banner strong { color: #d8b4fe; }
+
+/* ── Result cards ────────────────────────────────────────── */
+.result-card {
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+.result-card-purple {
+    background: rgba(109,0,204,0.08);
+    border-left: 3px solid #6D00CC;
+}
+.result-card-blue {
+    background: rgba(33,150,243,0.07);
+    border-left: 3px solid #2196F3;
+}
+.result-card-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.result-card-value {
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.5;
+}
+
+/* ── Detail rows ─────────────────────────────────────────── */
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+.detail-key { color: #777; font-weight: 600; min-width: 72px; }
+.detail-val { color: #ccc; }
+.val-ok { color: #4CAF50; }
+.val-error { color: #f44336; }
+
+/* ── Modules list ────────────────────────────────────────── */
+.modules-list-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 9px;
+    padding: 10px;
+    margin-bottom: 12px;
+}
+.modules-list-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.module-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.module-row:last-child { border-bottom: none; }
+.module-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.module-row-icon { font-size: 14px; flex-shrink: 0; }
+.module-row-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.module-row-app {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #c084fc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.module-row-label {
+    font-size: 10px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.module-row-type {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #555;
+    letter-spacing: 0.3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+}
+
+/* ── Export section ──────────────────────────────────────── */
+    margin-top: 4px;
+}
+
+.btn-api-export {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6D00CC 0%, #a259ff 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(109, 0, 204, 0.3);
+    margin-bottom: 12px;
+}
+
+.btn-api-export:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(109, 0, 204, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-api-export:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+
+.btn-api-export.is-loading {
+    background: #444;
+}
+
+.api-error-msg {
+    background: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    color: #ff8a8a;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.api-success-link {
+    display: block;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #81c784;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+    text-decoration: none;
+    margin-bottom: 15px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.api-success-link:hover {
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.spinner-small {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin-small 0.8s linear infinite;
+}
+
+@@keyframes spin-small {
+    to { transform: rotate(360deg); }
+}
+
+.btn-download-blueprint {
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #5a00aa, #6D00CC);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 16px rgba(109,0,204,0.35);
+}
+.btn-download-blueprint:hover {
+    background: linear-gradient(135deg, #6a00cc, #8B00FF);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(109,0,204,0.5);
+}
+.btn-download-blueprint:active { transform: translateY(0); }
+
+/* ── Import guide ────────────────────────────────────────── */
+.import-guide {
+    background: rgba(109,0,204,0.07);
+    border: 1px solid rgba(109,0,204,0.18);
+    border-radius: 9px;
+    padding: 12px 14px;
+}
+.import-guide-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #c084fc;
+    margin-bottom: 8px;
+}
+/* ── Conexión / Debug ───────────────────────────────────── */
+.debug-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.btn-connection-test {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #ccc;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.btn-connection-test:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+.connection-status {
+    font-size: 10px;
+    color: #999;
+}
+
+.import-steps {
+    margin: 0;
+    padding-left: 16px;
+    color: #999;
+    font-size: 11px;
+    line-height: 1.9;
+}
+.import-steps li strong { color: #d8b4fe; }
+.import-steps li code {
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 10.5px;
+    color: #e0d0ff;
+}
+
+/* ── Error ───────────────────────────────────────────────── */
+.export-error-msg {
+    font-size: 12px;
+    color: #f48fb1;
+    padding: 8px 12px;
+    background: rgba(244,67,54,0.08);
+    border-radius: 7px;
+    border-left: 3px solid #f44336;
+    margin-top: 8px;
+}
+
+/* ── Status placeholder ──────────────────────────────────── */
+.status-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    color: #666;
+    text-align: center;
+    font-size: 13px;
+}
+
+/* ── Mini spinner ────────────────────────────────────────── */
+.mini-make-spin {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(109,0,204,0.2);
+    border-top-color: #6D00CC;
+    border-radius: 50%;
+    animation: make-spin 0.9s ease-in-out infinite;
+}
+@@keyframes make-spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AI.OnStateChanged += StateHasChanged;
+    }
+
+    private async Task DescargarBlueprint()
+    {
+        if (AI.LastResult?.BlueprintData == null) return;
+        var json = AI.LastResult.BlueprintData.Value.GetRawText();
+        var fileName = $"make_blueprint_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+        // Asumimos que downloadJsonFile existe ya que estaba en la versión anterior
+        await JS.InvokeVoidAsync("downloadJsonFile", fileName, json);
+    }
+
+    private async Task CrearEnMake()
+    {
+        await AI.ExportToMakeAsync();
+    }
+
+    private async Task ProbarConexion()
+    {
+        await AI.VerifyMakeConnectionAsync();
+    }
+
+    public void Dispose()
+    {
+        AI.OnStateChanged -= StateHasChanged;
+    }
+}

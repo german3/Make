@@ -1,0 +1,1 @@
+Generame un grafo que inicie con un GMail trigger y me lo mande por Slack en N8N

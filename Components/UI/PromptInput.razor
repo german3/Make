@@ -1,0 +1,40 @@
+@namespace AppN8N.Components.UI
+@using AppN8N.Services
+@inject AIService AI
+@implements IDisposable
+
+<div class="panel area-prompt">
+    <div class="panel-header">
+        Describe tu automatización en Make
+    </div>
+    <div class="panel-content" style="display: flex; flex-direction: column; justify-content: flex-end;">
+        <textarea class="input-box" rows="3" placeholder="Ej: Cuando llegue un webhook, procesa los datos con OpenAI y guárdalos en Google Sheets..." @bind="currentPrompt" @bind:event="oninput" disabled="@AI.IsGenerating" style="margin-bottom: 12px; flex-grow: 1;"></textarea>
+        <button class="btn-primary" @onclick="ExecutePrompt" disabled="@(string.IsNullOrWhiteSpace(currentPrompt) || AI.IsGenerating)">
+            @(AI.IsGenerating ? "Generando Escenario Make..." : "⚡ Generar Escenario con IA")
+        </button>
+    </div>
+</div>
+
+@code {
+    private string currentPrompt = "";
+
+    private async Task ExecutePrompt()
+    {
+        if (!string.IsNullOrWhiteSpace(currentPrompt) && !AI.IsGenerating)
+        {
+            var promptToExecute = currentPrompt;
+            currentPrompt = "";
+            await AI.ProcessPromptAsync(promptToExecute);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        AI.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AI.OnStateChanged -= StateHasChanged;
+    }
+}

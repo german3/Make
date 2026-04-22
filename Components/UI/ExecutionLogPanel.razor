@@ -1,0 +1,50 @@
+@namespace AppN8N.Components.UI
+@using AppN8N.Services
+@inject AIService AI
+@implements IDisposable
+
+<div class="panel area-exec">
+    <div class="panel-header">
+        Registro de ejecución
+    </div>
+    <div class="panel-content" style="background-color: #050505; font-family: 'Consolas', monospace; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;" id="exec-logs-container">
+        @if (AI.ExecutionLogs.Count == 0 && !AI.IsGenerating)
+        {
+            <div style="color: #4a4e69;">MAKE SCENARIO GENERATOR AI START...<br/>Esperando descripción de automatización...</div>
+        }
+        else
+        {
+            @for (int i = 0; i < AI.ExecutionLogs.Count; i++)
+            {
+                var isLast = i == AI.ExecutionLogs.Count - 1 && AI.IsGenerating;
+                <div class="log-entry @(isLast ? "active" : "")">
+                    <span style="color: #4CAF50;">$</span> @AI.ExecutionLogs[i]
+                    @if(isLast) { <span class="cursor-blink" style="background:var(--accent-color); display:inline-block; width:6px; height:12px; margin-left:4px;"></span> }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<style>
+@@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+.cursor-blink {
+    animation: blink 1s step-start infinite;
+}
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AI.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AI.OnStateChanged -= StateHasChanged;
+    }
+}

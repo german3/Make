@@ -1,0 +1,24 @@
+# .NET Core
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Secrets & Config
+appsettings.json
+appsettings.Development.json
+
+# Tooling
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# OS
+Thumbs.db
+.DS_Store
