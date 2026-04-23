@@ -3,8 +3,11 @@ using AppN8N.Components;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuración de puerto para despliegue (Railway)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

@@ -34,11 +34,11 @@ namespace AppN8N.Services
         public AIService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _openRouterApiKey = configuration["Gemini:ApiKey"] ?? "";
+            _openRouterApiKey = configuration["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("Gemini__ApiKey") ?? "";
             
-            _makeApiToken = configuration["Make:ApiToken"] ?? "";
-            _makeTeamId = configuration["Make:TeamId"] ?? "";
-            _makeRegion = configuration["Make:Region"] ?? "us1";
+            _makeApiToken = configuration["Make:ApiToken"] ?? Environment.GetEnvironmentVariable("Make__ApiToken") ?? "";
+            _makeTeamId = configuration["Make:TeamId"] ?? Environment.GetEnvironmentVariable("Make__TeamId") ?? "";
+            _makeRegion = configuration["Make:Region"] ?? Environment.GetEnvironmentVariable("Make__Region") ?? "us1";
         }
 
         // ─── GENERAR ESCENARIO MAKE CON IA ──────────────────────────────
