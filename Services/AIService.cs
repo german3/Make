@@ -14,7 +14,7 @@ namespace AppN8N.Services
     public class AIService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _openRouterApiKey;
+        private string _openRouterApiKey;
 
         public event Action? OnStateChanged;
 
@@ -68,10 +68,13 @@ namespace AppN8N.Services
             if (!foundAny) await LogAsync("DEBUG - ¡ALERTA! No se encontró NINGUNA variable relacionada a Gemini, Make o Railway.");
 
             // Recargar por si Railway las pasó en mayúsculas
-            var geminiKey = configuration["Gemini:ApiKey"] 
-                ?? Environment.GetEnvironmentVariable("Gemini__ApiKey") 
-                ?? Environment.GetEnvironmentVariable("GEMINI__APIKEY") 
-                ?? "";
+            var geminiKey = _openRouterApiKey;
+            if (string.IsNullOrWhiteSpace(geminiKey))
+            {
+                geminiKey = Environment.GetEnvironmentVariable("GEMINI__APIKEY") 
+                            ?? Environment.GetEnvironmentVariable("Gemini__ApiKey") 
+                            ?? "";
+            }
 
             if (string.IsNullOrWhiteSpace(geminiKey))
             {
