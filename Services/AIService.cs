@@ -51,25 +51,38 @@ namespace AppN8N.Services
             LastResult = null;
             NotifyStateChanged();
 
-            // DEBUGGING: Imprimir las variables de entorno que existen
+            // DEBUGGING: Imprimir TODAS las variables de entorno para ver qué inyecta Railway
             var envVars = Environment.GetEnvironmentVariables();
+            await LogAsync($"DEBUG - Total de variables de entorno en el sistema: {envVars.Count}");
+            
+            var foundAny = false;
             foreach (System.Collections.DictionaryEntry env in envVars)
             {
-                var key = env.Key.ToString();
-                if (key != null && (key.Contains("Gemini") || key.Contains("Make") || key.Contains("API")))
+                var key = env.Key.ToString()?.ToLower() ?? "";
+                if (key.Contains("gemini") || key.Contains("make") || key.Contains("api") || key.Contains("railway"))
                 {
-                    await LogAsync($"DEBUG - Variable encontrada: '{key}' (Longitud valor: {env.Value?.ToString()?.Length ?? 0})");
+                    await LogAsync($"DEBUG - Variable encontrada: '{env.Key}'");
+                    foundAny = true;
                 }
             }
+            if (!foundAny) await LogAsync("DEBUG - ¡ALERTA! No se encontró NINGUNA variable relacionada a Gemini, Make o Railway.");
 
-            if (string.IsNullOrWhiteSpace(_openRouterApiKey))
+            // Recargar por si Railway las pasó en mayúsculas
+            var geminiKey = configuration["Gemini:ApiKey"] 
+                ?? Environment.GetEnvironmentVariable("Gemini__ApiKey") 
+                ?? Environment.GetEnvironmentVariable("GEMINI__APIKEY") 
+                ?? "";
+
+            if (string.IsNullOrWhiteSpace(geminiKey))
             {
-                await LogAsync($"ERROR: API Key de OpenRouter no configurada o vacía. (Longitud leída: {_openRouterApiKey?.Length ?? 0})");
+                await LogAsync($"ERROR: API Key de OpenRouter no configurada o vacía. (Longitud leída: {geminiKey.Length})");
                 LastResult = new MakeResult { Description = "Error: Falta API Key.", GeneratedAt = DateTime.Now };
                 IsGenerating = false;
                 NotifyStateChanged();
                 return;
             }
+            
+            _openRouterApiKey = geminiKey;
 
             if (!_openRouterApiKey.StartsWith("sk-or-"))
             {
