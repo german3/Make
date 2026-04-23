@@ -51,9 +51,20 @@ namespace AppN8N.Services
             LastResult = null;
             NotifyStateChanged();
 
+            // DEBUGGING: Imprimir las variables de entorno que existen
+            var envVars = Environment.GetEnvironmentVariables();
+            foreach (System.Collections.DictionaryEntry env in envVars)
+            {
+                var key = env.Key.ToString();
+                if (key != null && (key.Contains("Gemini") || key.Contains("Make") || key.Contains("API")))
+                {
+                    await LogAsync($"DEBUG - Variable encontrada: '{key}' (Longitud valor: {env.Value?.ToString()?.Length ?? 0})");
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(_openRouterApiKey))
             {
-                await LogAsync("ERROR: API Key de OpenRouter no configurada o vacía.");
+                await LogAsync($"ERROR: API Key de OpenRouter no configurada o vacía. (Longitud leída: {_openRouterApiKey?.Length ?? 0})");
                 LastResult = new MakeResult { Description = "Error: Falta API Key.", GeneratedAt = DateTime.Now };
                 IsGenerating = false;
                 NotifyStateChanged();
