@@ -61,22 +61,6 @@ namespace AppN8N.Services
             LastResult = null;
             NotifyStateChanged();
 
-            // DEBUGGING: Imprimir TODAS las variables de entorno para ver qué inyecta Railway
-            var envVars = Environment.GetEnvironmentVariables();
-            await LogAsync($"DEBUG - Total de variables de entorno en el sistema: {envVars.Count}");
-            
-            var foundAny = false;
-            foreach (System.Collections.DictionaryEntry env in envVars)
-            {
-                var key = env.Key.ToString()?.ToLower() ?? "";
-                if (key.Contains("gemini") || key.Contains("make") || key.Contains("api") || key.Contains("railway"))
-                {
-                    await LogAsync($"DEBUG - Variable encontrada: '{env.Key}'");
-                    foundAny = true;
-                }
-            }
-            if (!foundAny) await LogAsync("DEBUG - ¡ALERTA! No se encontró NINGUNA variable relacionada a Gemini, Make o Railway.");
-
             // Recargar por si Railway las pasó en mayúsculas
             var geminiKey = _openRouterApiKey;
             if (string.IsNullOrWhiteSpace(geminiKey))
