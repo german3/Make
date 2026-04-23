@@ -225,6 +225,10 @@ Reglas ESTRICTAS:
 
             try
             {
+                await LogAsync($"DEBUG Make - Token leido (longitud): {_makeApiToken?.Length ?? 0}");
+                await LogAsync($"DEBUG Make - TeamId leido: '{_makeTeamId}'");
+                await LogAsync($"DEBUG Make - Region leida: '{_makeRegion}'");
+
                 if (string.IsNullOrWhiteSpace(_makeApiToken) || _makeApiToken == "TU_API_TOKEN_AQUI")
                     throw new Exception("Falta configurar el Token de Make en appsettings.json");
 
