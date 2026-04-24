@@ -14,15 +14,14 @@
 body, html {
   margin: 0;
   padding: 0;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  width: 100%;
   background-color: var(--bg-main);
   color: var(--text-primary);
   font-family: var(--font-family);
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-/* Base styles / Reset */
 * {
   box-sizing: border-box;
 }
@@ -33,13 +32,9 @@ h1, h2, h3, h4, p {
 }
 
 /* Dashboard Layout */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: 2fr 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  height: 100vh;
+.dashboard-container {
+  width: 100%;
+  max-width: 100%;
 }
 
 .panel {
@@ -52,6 +47,40 @@ h1, h2, h3, h4, p {
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   backdrop-filter: blur(10px);
   transition: border-color 0.3s ease;
+  height: 100%;
+}
+
+.panel-wrapper {
+  height: 100%;
+}
+
+/* Alturas específicas para Desktop */
+@media (min-width: 992px) {
+  .canvas-wrapper {
+    height: 60vh;
+  }
+  .info-wrapper {
+    height: calc(40vh - 4.5rem);
+  }
+  .exec-wrapper {
+    height: 60vh;
+  }
+  .prompt-wrapper {
+    height: calc(40vh - 4.5rem);
+  }
+}
+
+/* Ajustes para Móvil */
+@media (max-width: 991px) {
+  .canvas-wrapper {
+    height: 400px;
+  }
+  .info-wrapper, .exec-wrapper {
+    height: 500px;
+  }
+  .prompt-wrapper {
+    height: auto;
+  }
 }
 
 .panel:hover {
@@ -76,30 +105,6 @@ h1, h2, h3, h4, p {
   padding: 16px;
   overflow-y: auto;
   position: relative;
-}
-
-/* Area 1: Top Left - Canvas (Mock n8n style) */
-.area-canvas {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-/* Area 2: Bottom Left - Node Info */
-.area-info {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-/* Area 3: Top Right - Log Execution */
-.area-exec {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-/* Area 4: Bottom Right - Prompt input */
-.area-prompt {
-  grid-column: 2;
-  grid-row: 2;
 }
 
 /* Shared UI Components */
@@ -182,20 +187,6 @@ h1, h2, h3, h4, p {
   color: var(--text-secondary);
 }
 
-/* Mock Canvas Image */
-.mock-canvas {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
-}
-
-.mock-canvas:hover {
-  opacity: 1;
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -210,36 +201,4 @@ h1, h2, h3, h4, p {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
-}
-
-/* Responsive Layout */
-@media (max-width: 768px) {
-  body, html {
-    overflow-y: auto;
-    height: auto;
-    min-height: 100vh;
-  }
-  
-  .dashboard-grid {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-
-  .area-canvas {
-    min-height: 400px;
-  }
-
-  .area-exec {
-    min-height: 250px;
-  }
-
-  .area-info {
-    min-height: 400px;
-  }
-
-  .area-prompt {
-    min-height: auto;
-  }
 }

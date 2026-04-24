@@ -4,9 +4,25 @@
 
 <PageTitle>Sistema de Configuración N8N con IA</PageTitle>
 
-<div class="dashboard-grid">
-    <CanvasView />
-    <ExecutionLogPanel />
-    <NodeInfoPanel />
-    <PromptInput />
+<div class="dashboard-container container-fluid px-3 py-3">
+    <div class="row g-3">
+        <!-- Columna izquierda: Canvas + NodeInfo -->
+        <div class="col-12 col-lg-8 d-flex flex-column gap-3">
+            <div class="panel-wrapper canvas-wrapper">
+                <CanvasView />
+            </div>
+            <div class="panel-wrapper info-wrapper">
+                <NodeInfoPanel />
+            </div>
+        </div>
+        <!-- Columna derecha: Logs + Prompt -->
+        <div class="col-12 col-lg-4 d-flex flex-column gap-3">
+            <div class="panel-wrapper exec-wrapper">
+                <ExecutionLogPanel />
+            </div>
+            <div class="panel-wrapper prompt-wrapper">
+                <PromptInput />
+            </div>
+        </div>
+    </div>
 </div>

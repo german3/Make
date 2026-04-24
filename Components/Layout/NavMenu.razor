@@ -1,30 +1,88 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">AppN8N</a>
+        <a class="navbar-brand d-flex align-items-center gap-2" href="">
+            <svg width="24" height="24" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="100" fill="#6D00CC"/>
+                <path d="M60 130 L100 70 L140 130" stroke="white" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span class="fw-bold text-uppercase" style="letter-spacing: 1px;">Make Generator</span>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse @(collapseNavMenu ? "" : "show")" id="navbarNav">
+            <ul class="navbar-nav ms-auto gap-2">
+                <li class="nav-item">
+                    <NavLink class="nav-link rounded-pill px-3" href="" Match="NavLinkMatch.All">
+                        <i class="bi bi-house-door-fill me-1"></i> Dashboard
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link rounded-pill px-3" href="counter">
+                        <i class="bi bi-plus-square-fill me-1"></i> Counter
+                    </NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link rounded-pill px-3" href="weather">
+                        <i class="bi bi-cloud-sun-fill me-1"></i> Weather
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    private bool collapseNavMenu = true;
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+<style>
+    .navbar {
+        background-color: var(--bg-panel) !important;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+    }
+    
+    .nav-link {
+        color: var(--text-secondary) !important;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+        color: var(--text-primary) !important;
+        background-color: rgba(109, 0, 204, 0.15) !important;
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
+    @media (min-width: 992px) {
+        .navbar {
+            padding: 1.5rem 1rem;
+            flex-direction: column;
+            height: 100vh;
+            align-items: flex-start;
+            width: 250px;
+        }
+        
+        .navbar-collapse {
+            width: 100%;
+        }
+        
+        .navbar-nav {
+            flex-direction: column !important;
+            width: 100%;
+            margin-top: 2rem;
+        }
+        
+        .nav-item {
+            width: 100%;
+        }
+    }
+</style>

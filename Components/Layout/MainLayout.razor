@@ -1,8 +1,16 @@
 @inherits LayoutComponentBase
 
-    <main style="min-height: 100vh; width: 100vw; background-color: var(--bg-main); overflow-x: hidden; display: flex; flex-direction: column;">
-        @Body
+<div class="d-flex flex-column flex-lg-row min-vh-100">
+    <header>
+        <NavMenu />
+    </header>
+
+    <main class="flex-grow-1 overflow-hidden" style="background-color: var(--bg-main);">
+        <article class="p-0">
+            @Body
+        </article>
     </main>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
