@@ -211,3 +211,35 @@ h1, h2, h3, h4, p {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  body, html {
+    overflow-y: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .area-canvas {
+    min-height: 400px;
+  }
+
+  .area-exec {
+    min-height: 250px;
+  }
+
+  .area-info {
+    min-height: 400px;
+  }
+
+  .area-prompt {
+    min-height: auto;
+  }
+}
