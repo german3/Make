@@ -59,40 +59,46 @@ p {
   height: 100%;
 }
 
-/* Alturas específicas para Desktop / Tablet Landscape */
-@media (min-width: 992px) {
+/* Alturas específicas para Desktop / Pantallas Grandes */
+@media (min-width: 1200px) {
   .canvas-wrapper {
-    height: 55vh;
-    min-height: 400px;
+    height: 60vh;
+    min-height: 450px;
   }
   .info-wrapper {
-    height: calc(45vh - 4.5rem);
-    min-height: 300px;
+    height: calc(40vh - 4.5rem);
+    min-height: 250px;
   }
   .exec-wrapper {
-    height: 55vh;
-    min-height: 400px;
+    height: 60vh;
+    min-height: 450px;
   }
   .prompt-wrapper {
-    height: calc(45vh - 4.5rem);
-    min-height: 300px;
+    height: calc(40vh - 4.5rem);
+    min-height: 250px;
   }
 }
 
-/* Ajustes para Móvil y Tablet Portrait */
-@media (max-width: 991px) {
+/* Ajustes para Móvil y Tablets (Stacking) */
+@media (max-width: 1199.98px) {
   .canvas-wrapper {
-    height: 45vh;
-    min-height: 350px;
+    height: 50vh;
+    min-height: 300px;
   }
   .info-wrapper,
-  .exec-wrapper {
-    height: auto;
-    min-height: 400px;
-  }
+  .exec-wrapper,
   .prompt-wrapper {
     height: auto;
-    min-height: 250px;
+    min-height: 200px;
+  }
+  
+  .dashboard-container {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  
+  .panel {
+    margin-bottom: 1rem;
   }
 }
 
